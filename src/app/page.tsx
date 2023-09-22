@@ -9,7 +9,9 @@ const MOVE = function (arr: Array<any>,from: number, to: number) {
 export default function Home() {
   const [team, setTeam] = useState([] as any);
   const [out, setOut] = useState([] as any);
+  const [outSave, setOutSave] = useState([] as any);
   const [pointer, setPointer] = useState(-1);
+  const [allowChange, setAllowChange] = useState(true);
 
   const addOutPlayer = (playerOut: any) => { 
     const players = [...out];
@@ -33,11 +35,10 @@ export default function Home() {
   const playersGoing = (player:any) => !out.find((outPlayer: any) => outPlayer.id === player.id);
   const handlerMultiplePlayerChange = () => {
     let newOrder = team.filter((player:any) => playersGoing(player));
-    console.log('new order', newOrder);
-    // out.forEach((player:any)=> {
-    //   const index = newOrder.findIndex((elem) => elem.id === player.id);
-    //   newOrder.splice(index, 1);
-    // });
+    const insertIndex =  (pointer) - out.length;
+    out.forEach((player:any)=> {
+      newOrder.splice(insertIndex, 0, player);
+    });
      return newOrder;
   };
 
@@ -46,8 +47,11 @@ export default function Home() {
       setTeam(handlerOnePlayerChange());
     }else {
       setTeam(handlerMultiplePlayerChange());
+      setPointer(pointer + (out.length - 1));
+      setOutSave([...out])
     }
     setOut([]);
+    setAllowChange(false);
   };
   useEffect(() => {
     fetch('/api/team/get')
@@ -66,8 +70,8 @@ export default function Home() {
               {team.map((player:any, index:number) => {
                 return (
                   <li key={player.id}>
-                    {index !== pointer - 1 &&
-                      <input type='checkbox' onClick={()=>{addOutPlayer(player)}} /> 
+                    {((index !== pointer - 1  && !outSave.find((outPlayer:any) => outPlayer.id === player.id)) && allowChange) &&
+                      <input type='checkbox' onChange={()=>{addOutPlayer(player)}} /> 
                     }
                     {player.name}
                   </li>
@@ -77,11 +81,9 @@ export default function Home() {
         </div>
   
         <div className=''>
-            <button onClick={()=>{
-              const out = [team[1]];
-              replace(out);
-            }} 
-            style={{backgroundColor: 'white'}}
+            <button onClick={replace} 
+            style={{backgroundColor: allowChange ? 'white' : 'black'}}
+            disabled={!allowChange}
             >Cambiar jugadores ➜
             </button>
         </div>
@@ -89,8 +91,21 @@ export default function Home() {
           {/* eslint-disable */}
           <h2>Rota: {team[pointer -1]?.name}</h2>
 
-          <p>Fuera:</p>
+          <h2>Fuera:</h2>
+          <ul>
+              {outSave.map((player:any, index:number) => {
+                return (
+                  <li key={player.id}>
+                    {`${index + 1}.${player.name}`}
+                  </li>
+                );
+              })}
+          </ul>
         </div>
+        <button onClick={()=>{location.reload()}} 
+            style={{backgroundColor: 'white'}}
+            >Reinicar
+          </button>
       </div>
     </main>
   )
