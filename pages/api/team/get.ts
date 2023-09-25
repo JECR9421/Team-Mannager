@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { MongoClient } from 'mongodb'
+import { Db, MongoClient } from 'mongodb'
 import moment from 'moment'
 
 // Connection URL
@@ -11,6 +11,13 @@ type ResponseData = {
   nextCut: string
   pointer: number
 }
+
+const handleNext = async (nextCutDate: moment.Moment, teamLength:number, curPointer:number, client: MongoClient,db : Db) => {
+ const pointer = (curPointer + 1) <= teamLength ? curPointer + 1 : 1;
+ const pointerCollection = db.collection('rotation');
+ await pointerCollection.insertOne({pointer,nextCut: nextCutDate.format('YYYY-MM-DD')});
+ return pointer;
+};
  
 export default async function handler(
   req: NextApiRequest,
@@ -23,8 +30,14 @@ export default async function handler(
   const pointerCollection = db.collection('rotation');
   const findResult = await teamCollection.find({}).toArray();
   const rotation = await pointerCollection.find({}).sort({_id:-1}).limit(1).toArray();
+  const { pointer: curPointer, nextCut : lastCutStr } = rotation[0];
   const now = moment();
-  const nextCut = now.clone().weekday(7).add(1, 'day').format();
-  const { pointer } = rotation[0];
-  res.status(200).json({team: findResult, nextCut, pointer})
+  const nextCut = now.clone().weekday(7).add(1, 'day');
+  const lastCut = moment(lastCutStr, 'YYYY-MM-DD');
+  let pointer = curPointer;
+  if (moment(nextCut).isAfter(lastCut, 'day')) {
+   pointer = await handleNext(nextCut, findResult.length, curPointer, client, db);
+  }
+  client.close();
+  res.status(200).json({team: findResult, nextCut: nextCut.format(), pointer})
 }

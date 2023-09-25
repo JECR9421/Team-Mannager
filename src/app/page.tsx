@@ -6,6 +6,9 @@ const MOVE = function (arr: Array<any>,from: number, to: number) {
   arr.splice(to, 0, arr.splice(from, 1)[0]);
   return arr;
 };
+
+const SORT_PLAYERS_BY_ID = (player1: any, player2: any)=> (player1.id < player2.id) ? -1 : (player1.id > player2.id) ? 1 : 0;
+
 export default function Home() {
   const [team, setTeam] = useState([] as any);
   const [out, setOut] = useState([] as any);
@@ -21,33 +24,40 @@ export default function Home() {
     } else {
       players.splice(exists, 1);
     }
-    setOut(players);
+    setOut(players.sort(SORT_PLAYERS_BY_ID));
   };
 
   const handlerOnePlayerChange = () => {
     let newOrder = [];
     const outIndex = team.findIndex((player:any) => player.id === out[0].id);
      newOrder = MOVE([...team], outIndex, pointer -1);
-     newOrder = MOVE([...newOrder], pointer, outIndex);
+     //newOrder = MOVE([...newOrder], pointer, outIndex);
      return newOrder;
   };
   
   const playersGoing = (player:any) => !out.find((outPlayer: any) => outPlayer.id === player.id);
   const handlerMultiplePlayerChange = () => {
     let newOrder = team.filter((player:any) => playersGoing(player));
-    const insertIndex =  (pointer) - out.length;
+    let insertIndex =  ((pointer) - out.length) > -1 ? pointer - out.length : 0;
     out.forEach((player:any)=> {
       newOrder.splice(insertIndex, 0, player);
+      insertIndex++;
     });
+     const lastOutInserted = newOrder.findIndex((player:any) => player.id === out[out.length - 1].id);
+     setPointer(lastOutInserted + 1);
      return newOrder;
   };
 
   const replace = () => {
+    if (out.length === 0) {
+      alert('Debe seleccionar al menos 1 jugador');
+      return;
+    }
     if(out.length === 1) {
       setTeam(handlerOnePlayerChange());
     }else {
       setTeam(handlerMultiplePlayerChange());
-      setPointer(pointer + (out.length - 1));
+      //setPointer(pointer + (out.length - pointer));
       setOutSave([...out])
     }
     setOut([]);
@@ -82,7 +92,11 @@ export default function Home() {
   
         <div className=''>
             <button onClick={replace} 
-            style={{backgroundColor: allowChange ? 'white' : 'black'}}
+            style={{
+              backgroundColor: allowChange ? '#00FA9A' : '#A9A9A9', 
+              cursor: allowChange ? 'pointer' : 'not-allowed',
+              color:  allowChange ? 'black' : '#fdfdfd6e'
+            }}
             disabled={!allowChange}
             >Cambiar jugadores ➜
             </button>
@@ -102,10 +116,26 @@ export default function Home() {
               })}
           </ul>
         </div>
-        <button onClick={()=>{location.reload()}} 
-            style={{backgroundColor: 'white'}}
-            >Reinicar
-          </button>
+        
+      </div>
+      <div className="grid grid-cols-2" style={{marginTop: '5%'}}>
+          <div>
+          <button 
+              disabled={allowChange}
+              onClick={()=>{location.reload()}} 
+              style={{
+                backgroundColor: !allowChange ? '#00FA9A' : '#A9A9A9', 
+                cursor: !allowChange ? 'pointer' : 'not-allowed', 
+                color: !allowChange ? 'black' : '#fdfdfd6e'}}
+              >Guardar
+            </button>
+          </div>
+          <div>
+            <button onClick={()=>{location.reload()}} 
+              style={{backgroundColor: 'white'}}
+              >Reinicar
+            </button>
+          </div>
       </div>
     </main>
   )
