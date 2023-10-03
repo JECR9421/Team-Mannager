@@ -28,7 +28,7 @@ export default async function handler(
   const db = client.db(dbName);
   const teamCollection = db.collection('team-list');
   const pointerCollection = db.collection('rotation');
-  const findResult = await teamCollection.find({}).toArray();
+  const findResult = await teamCollection.find({}).soert({id:1}).toArray();
   const rotation = await pointerCollection.find({}).sort({_id:-1}).limit(1).toArray();
   const { pointer: curPointer, nextCut : lastCutStr } = rotation[0];
   const now = moment();

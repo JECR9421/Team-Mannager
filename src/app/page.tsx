@@ -72,6 +72,16 @@ export default function Home() {
         setPointer(pointer);
       })
   }, [])
+
+  const save = async () => {
+    const teamToSave = team.map((player: any, index: number) => ({...player , id: index + 1}));
+    const playLoad = {team: teamToSave, pointer, playersOut: out};
+    await fetch('/api/team/save', {method: "PUT",  headers: {
+      "Content-Type": "application/json",
+      // 'Content-Type': 'application/x-www-form-urlencoded',
+    },body: JSON.stringify(playLoad)});
+    location.reload();
+  }
   return (
     <main className="flex min-h-screen flex-col p-24">
       <div className="grid grid-cols-1 md:grid-cols-3">
@@ -122,7 +132,7 @@ export default function Home() {
           <div>
           <button 
               disabled={allowChange}
-              onClick={()=>{location.reload()}} 
+              onClick={save} 
               style={{
                 backgroundColor: !allowChange ? '#00FA9A' : '#A9A9A9', 
                 cursor: !allowChange ? 'pointer' : 'not-allowed', 
